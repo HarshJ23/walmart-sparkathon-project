@@ -3,3 +3,6 @@ groq
 flask
 requests
 python-dotenv
+aiohttp
+flask-cors
+flask[async]
