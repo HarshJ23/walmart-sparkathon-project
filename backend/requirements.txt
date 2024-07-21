@@ -1,0 +1,5 @@
+openai
+groq
+flask
+requests
+python-dotenv
