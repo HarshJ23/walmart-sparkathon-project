@@ -4,23 +4,42 @@ import { Button } from "@/components/ui/button";
 import { LuSend } from "react-icons/lu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton"
-// import { Navbar } from '@/components/shared/Navbar';
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+
+
+// card component imports
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import Link from 'next/link';
+import Image from 'next/image';
+
+interface Product {
+  image: string;
+  link: string;
+  price: number;
+  title: string;
+}
+
+interface ProductResult {
+  product: string;
+  results: Product[];
+}
 
 interface Message {
   type: 'user' | 'bot';
   text: string;
-  // pdt : string;
+  results?: ProductResult[];
 }
 
-// interface Product {
-//   type : 'bot',
-//   pdt : string;
-// }
-
 const placeholders = [
-  " Ask - Number of invoices per country?",
+  "Ask - Number of invoices per country?",
   "Ask - Which sales agent made the most in sales overall?",
   "Ask - Show the most purchased track of 2013?",
   "Ask - Give Total sales per country. Which country's customers spent the most?",
@@ -34,10 +53,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [products , setProducts] = useState<Message[]>([]);
-
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
 
   const handleInputChange = (newValue: string) => {
     setUserQuery(newValue);
@@ -55,9 +71,6 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, [messages]);
 
-
-  
-
   const sendMessage = async (message: string) => {
     setIsLoading(true);
     if (message.trim() === "") return;
@@ -71,7 +84,7 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text: message, // Change the key to 'query'
+          text: message,
         }),
       });
 
@@ -79,7 +92,7 @@ export default function Home() {
         const data = await response.json();
         console.log('Response from backend', data);
 
-        setMessages(prevMessages => [...prevMessages, { type: 'bot', text: data.assistant_response }]);
+        setMessages(prevMessages => [...prevMessages, { type: 'bot', text: data.assistant_response, results: data.results }]);
 
         setIsLoading(false);
       } else {
@@ -90,25 +103,52 @@ export default function Home() {
     }
   };
 
-
-
   return (
     <>
-    {/* <Navbar/> */}
-      <main className="flex min-h-screen flex-col items-center  px-14 py-24">
+      <main className="flex min-h-screen flex-col items-center px-14 py-24">
         <section ref={chatContainerRef} className="w-full md:w-3/4 lg:w-2/3 h-full flex flex-col gap-3 overflow-y-auto ">
           {messages.map((message, index) => (
-            <div key={index} className="flex flex-row gap-3  my-2 z-40  ">
+            <div key={index} className="flex flex-row gap-3 my-2 z-40">
               <Avatar className='z-20'>
                 <AvatarImage src={message.type === 'user' ? "./blume.png" : "./user.png"} />
                 <AvatarFallback>{message.type === 'user' ? "CN" : "BOT"}</AvatarFallback>
               </Avatar>
               <div className='text-xs md:text-base'>
                 <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
+
+{/* product card rendering */}
+                {message.results && message.results.map((productResult, productIndex) => (
+                   
+                  //  <div key={productIndex}>
+             
+                 
+
+                  <div key={productIndex} className='flex flex-row mt-3'>
+                    <h4>{productResult.product}</h4>
+                    {productResult.results.map((product, itemIndex) => (
+                      <div key={itemIndex} className="flex flex-row mt-3 gap-4 ">
+                             <Link href={product.link} target='_blank' >
+                   <Card className="w-[270px]">
+                   <CardContent>
+                  <Image src={product.image} alt="pdt image" width={40} height={30}/>
+                    </CardContent>
+                    <CardFooter className="flex ">
+                      <p>{product.title.length > 15 ? product.title.substring(0,15) + '....' : product.title}</p>
+                    </CardFooter>
+                      <p>Price: ${product.price.toFixed(2)}</p>
+                  </Card>
+                      </Link>
+                      </div>
+                    ))}
+                  </div>
+                
+                ))}
               </div>
             </div>
           ))}
 
+
+{/* loader */}
           {isLoading && (
             <div className="flex items-center space-x-4">
               <Skeleton className="h-12 w-12 rounded-full bg-slate-200" />
@@ -118,10 +158,10 @@ export default function Home() {
               </div>
             </div>
           )}
-
         </section>
       </main>
 
+{/* footer - chat input  */}
       <footer className="flex justify-center z-40 bg-white mt-3">
         <div className="my-2 p-2 mx-2 w-full md:w-3/4 lg:w-2/3 fixed bottom-0 z-40 bg-white">
           <div className="flex flex-row gap-2 border-[1.5px] border-blue-500 justify-center py-2 px-4 rounded-full z-40 bg-white">
@@ -141,4 +181,3 @@ export default function Home() {
     </>
   );
 }
-
