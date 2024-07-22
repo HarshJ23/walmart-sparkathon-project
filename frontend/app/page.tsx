@@ -11,8 +11,13 @@ import remarkGfm from 'remark-gfm'
 interface Message {
   type: 'user' | 'bot';
   text: string;
+  // pdt : string;
 }
 
+// interface Product {
+//   type : 'bot',
+//   pdt : string;
+// }
 
 const placeholders = [
   " Ask - Number of invoices per country?",
@@ -29,6 +34,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [products , setProducts] = useState<Message[]>([]);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -73,7 +79,8 @@ export default function Home() {
         const data = await response.json();
         console.log('Response from backend', data);
 
-        setMessages(prevMessages => [...prevMessages, { type: 'bot', text: data.output }]);
+        setMessages(prevMessages => [...prevMessages, { type: 'bot', text: data.assistant_response }]);
+
         setIsLoading(false);
       } else {
         console.error('Error in response:', response.statusText);
@@ -93,7 +100,7 @@ export default function Home() {
           {messages.map((message, index) => (
             <div key={index} className="flex flex-row gap-3  my-2 z-40  ">
               <Avatar className='z-20'>
-                <AvatarImage src={message.type === 'user' ? "./user.png" : "./blume_icon.jpeg"} />
+                <AvatarImage src={message.type === 'user' ? "./blume.png" : "./user.png"} />
                 <AvatarFallback>{message.type === 'user' ? "CN" : "BOT"}</AvatarFallback>
               </Avatar>
               <div className='text-xs md:text-base'>

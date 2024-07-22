@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)
 
 openai_key = os.getenv('OPENAI_API_KEY')
 serp_key = os.getenv('SERPAPI_API_KEY')
