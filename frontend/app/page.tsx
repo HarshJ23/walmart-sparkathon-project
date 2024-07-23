@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LuSend } from "react-icons/lu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton"
+import Loader from '@/components/shared/Loader'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -39,14 +40,16 @@ interface Message {
 }
 
 const placeholders = [
-  "Ask - Number of invoices per country?",
-  "Ask - Which sales agent made the most in sales overall?",
-  "Ask - Show the most purchased track of 2013?",
-  "Ask - Give Total sales per country. Which country's customers spent the most?",
+  "Ask - Ingredients for Pancakes?",
+  "Ask - Recipe and items to cook roasted duck?",
+  "Ask - Plan snacks for a football watch party at my house",
+  "Ask - Comfortable shorts for football.",
   "Ask - List Top 5 most purchased tracks overall?",
   "Ask - Who are the Top 3 best selling artists?",
   "Ask - Which is the most purchased Media Type?"
 ];
+
+
 
 export default function Home() {
   const [userQuery, setUserQuery] = useState<string>("");
@@ -110,36 +113,44 @@ export default function Home() {
           {messages.map((message, index) => (
             <div key={index} className="flex flex-row gap-3 my-2 z-40">
               <Avatar className='z-20'>
-                <AvatarImage src={message.type === 'user' ? "./blume.png" : "./user.png"} />
+                <AvatarImage src={message.type === 'user' ? "./OIP.jpeg" : "./user.png"} />
                 <AvatarFallback>{message.type === 'user' ? "CN" : "BOT"}</AvatarFallback>
               </Avatar>
               <div className='text-xs md:text-base'>
                 <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
+                {/* <Markdown remarkPlugins={[remarkGfm]}>{data.assistant_response}</Markdown> */}
+
 
 {/* product card rendering */}
+
                 {message.results && message.results.map((productResult, productIndex) => (
+
                    
-                  //  <div key={productIndex}>
              
                  
 
-                  <div key={productIndex} className='flex flex-row mt-3'>
-                    <h4>{productResult.product}</h4>
+                  <div key={productIndex} className='flex flex-col my-2'>
+                    <h4 className='font-semibold text-lg mt-2 mx-4'>{productResult.product}</h4>
+                    <div className='flex flex-row'>
+
                     {productResult.results.map((product, itemIndex) => (
-                      <div key={itemIndex} className="flex flex-row mt-3 gap-4 ">
+                      <div key={itemIndex} className="flex flex-row mt-2 ">
                              <Link href={product.link} target='_blank' >
-                   <Card className="w-[270px]">
+                   <Card className="w-[220px] mx-2 my-1 border-none shadow-none">
                    <CardContent>
-                  <Image src={product.image} alt="pdt image" width={40} height={30}/>
+                  <Image src={product.image} alt="pdt image" width={150} height={50} className='mt-3'/>
                     </CardContent>
-                    <CardFooter className="flex ">
-                      <p>{product.title.length > 15 ? product.title.substring(0,15) + '....' : product.title}</p>
+
+                    <CardFooter className="flex flex-col items-start gap-2">
+                      <p className='text-base font-medium  text-blue-800 bg-blue-100 px-[4px] py-[0.5px] rounded-sm inline-block'>${product.price.toFixed(2)}</p>
+                      <p className='text-base font-medium'>{product.title.length > 19 ? product.title.substring(0,19) + '...' : product.title}</p>
                     </CardFooter>
-                      <p>Price: ${product.price.toFixed(2)}</p>
+
                   </Card>
                       </Link>
                       </div>
                     ))}
+                    </div>
                   </div>
                 
                 ))}
@@ -150,16 +161,12 @@ export default function Home() {
 
 {/* loader */}
           {isLoading && (
-            <div className="flex items-center space-x-4">
-              <Skeleton className="h-12 w-12 rounded-full bg-slate-200" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-[250px] bg-slate-200" />
-                <Skeleton className="h-4 w-[200px] bg-slate-200" />
-              </div>
-            </div>
+          <Loader/>
           )}
+
         </section>
       </main>
+
 
 {/* footer - chat input  */}
       <footer className="flex justify-center z-40 bg-white mt-3">
@@ -172,8 +179,8 @@ export default function Home() {
               className="w-full border-none outline-none z-50 text-xs md:text-sm lg:text-base"
               placeholder={placeholders[placeholderIndex]}
             />
-            <Button type="submit" className="rounded-full" onClick={() => { sendMessage(userQuery); setUserQuery(""); }}>
-              <LuSend className="text-lg" />
+            <Button type="submit" className="rounded-full font-semibold" onClick={() => { sendMessage(userQuery); setUserQuery(""); }}>
+              <LuSend className="text-lg text-yellow-400 font-semibold" />
             </Button>
           </div>
         </div>
