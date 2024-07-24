@@ -16,23 +16,23 @@ export default function Loader() {
 </div>
       </div>
       
-      <div className="flex flex-row gap-20 mx-4">
+      <div className="flex flex-row gap-28 mx-4">
 
       <div className="flex flex-col ">
       <Skeleton className="h-28 w-[150px] mt-6 bg-slate-200"/>
-      <Skeleton className="h-6 mt-3 w-[100px] bg-slate-200"/>
+      <Skeleton className="h-6 mt-3 w-[150px] bg-slate-200"/>
       <Skeleton className="h-6 mt-3 w-[150px] bg-slate-200"/>
       </div>
 
       <div className="flex flex-col ">
       <Skeleton className="h-28 w-[150px] mt-6 bg-slate-200"/>
-      <Skeleton className="h-6 mt-3 w-[100px] bg-slate-200"/>
+      <Skeleton className="h-6 mt-3 w-[150px] bg-slate-200"/>
       <Skeleton className="h-6 mt-3 w-[150px] bg-slate-200"/>
       </div>
 
       <div className="flex flex-col ">
       <Skeleton className="h-28 w-[150px] mt-6 bg-slate-200"/>
-      <Skeleton className="h-6 mt-3 w-[100px] bg-slate-200"/>
+      <Skeleton className="h-6 mt-3 w-[150px] bg-slate-200"/>
       <Skeleton className="h-6 mt-3 w-[150px] bg-slate-200"/>
       </div>
     

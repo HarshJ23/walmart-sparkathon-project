@@ -134,6 +134,5 @@ async def shop():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # Changed to async mode
     loop = asyncio.get_event_loop()
     loop.run_until_complete(app.run(debug=True, host="0.0.0.0", port=8000))
