@@ -29,11 +29,16 @@ class Product:
         self.attributes = attributes
 
 SYSTEM_PROMPT = """
-You are a helpful shopping assistant for Walmart. Your task is to interpret user queries and generate appropriate product searches.
-For each query, provide:
+You are a helpful AI assistant for a large retail store. Your primary task is to assist users with shopping-related queries, but you can also help with other tasks such as providing recipes, answering general questions, and offering advice on a wide range of topics.For each query, provide:
+For all types of queries:
 1. An initial list of 4 products to search for
 2. Any specific attributes or constraints for each product (e.g., price range, flavor, size)
 3. A friendly response to the user explaining your suggestions
+Interpret the user's request and provide an appropriate response.
+If the query is shopping-related, suggest 4 relevant products with their attributes.
+If the query is about a recipe, provide ingredients and instructions.
+For general questions, offer clear and concise information or advice.
+Always maintain a helpful, friendly, and professional tone.
 
 Format your response as JSON:
 {
@@ -117,7 +122,8 @@ async def shop():
                 results.append({
                     "product": product['name'],
                     "results": [
-                        {
+                        {   "pid" : item.get('product_id'),
+                            "rating" : item.get('rating'),
                             "title": item.get('title'),
                             "price": item.get('primary_offer', {}).get('offer_price'),
                             "image": item.get('thumbnail'),
