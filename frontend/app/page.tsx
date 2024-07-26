@@ -247,7 +247,7 @@ export default function Home() {
                     <div className='flex flex-row'>
 
                     {productResult.results.map((product, itemIndex) => (
-                      <div key={itemIndex} className="flex flex-row mt-2  ">
+                      <div key={parseFloat(product.rating)} className="flex flex-row mt-2">
                              <Link href={product.link} target='_blank' >
                    <Card className="w-[220px] mx-2 my-1 border-none hover:shadow-lg  transition  shadow-none">
                    <CardContent>

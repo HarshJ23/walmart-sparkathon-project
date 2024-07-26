@@ -1,13 +1,11 @@
 import os
+import json
+import asyncio
 from flask import Flask, request, jsonify
 from openai import OpenAI
 from aiohttp import ClientSession
 from typing import List, Optional
 from flask_cors import CORS
-
-
-import asyncio
-import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,7 +27,7 @@ class Product:
         self.attributes = attributes
 
 SYSTEM_PROMPT = """
-You are a helpful AI assistant for a large retail store. Your primary task is to assist users with shopping-related queries, but you can also help with other tasks such as providing recipes, answering general questions, and offering advice on a wide range of topics.For each query, provide:
+You are a helpful AI assistant for a large retail store. Your primary task is to assist users with shopping-related queries, but you can also help with other tasks such as providing recipes, answering general questions, and offering advice on a wide range of topics. For each query, provide:
 For all types of queries:
 1. An initial list of 4 products to search for
 2. Any specific attributes or constraints for each product (e.g., price range, flavor, size)
@@ -55,22 +53,24 @@ Format your response as JSON:
 }
 """
 
+chat_history = [{"role": "system", "content": SYSTEM_PROMPT}]
+
 async def interpret_query(query: str):
+    chat_history.append({"role": "user", "content": query})
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": query}
-            ],
+            messages=chat_history,
             temperature=0.7,
         )
-        return completion.choices[0].message.content
+
+        response = completion.choices[0].message.content
+        chat_history.append({"role": "assistant", "content": response})
+        return response
     except Exception as e:
         print(f"Error in OpenAI API call: {str(e)}")
         raise
 
-# Changed to async function for parallel API calls
 async def search_walmart(product: Product, session: ClientSession):
     url = "https://serpapi.com/search.json"
     query = product.name
@@ -108,15 +108,20 @@ async def shop():
         except json.JSONDecodeError:
             return jsonify({"error": "Failed to parse OpenAI response"}), 500
         
+        # Debugging: Log the interpreted data to check its structure
+        print("Interpreted Data:", interpreted_data)
+        
+        if 'products' not in interpreted_data:
+            return jsonify({"error": "'products' key is missing in the response"}), 500
+        
         results = []
-        # Changed to async session for parallel API calls
         async with ClientSession() as session:
             tasks = []
             for product in interpreted_data['products']:
                 product_obj = Product(**product)
                 tasks.append(search_walmart(product_obj, session))
             
-            search_results = await asyncio.gather(*tasks)  # Gather results asynchronously
+            search_results = await asyncio.gather(*tasks)
             
             for product, result in zip(interpreted_data['products'], search_results):
                 results.append({
@@ -133,7 +138,7 @@ async def shop():
                 })
         
         return jsonify({
-            "assistant_response": interpreted_data['response'],
+            "assistant_response": interpreted_data.get('response', ''),
             "results": results
         })
     except Exception as e:

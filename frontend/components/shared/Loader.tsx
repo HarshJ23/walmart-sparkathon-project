@@ -4,12 +4,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Loader() {
   return (
-    <div className="flex items-center space-x-4">
-    <div className="space-y-2 mx-6">
+    <div className="flex items-center">
+    <div className="space-y-2 ">
       <div className="flex flex-row">
-    <Skeleton className="h-12 w-12 rounded-full bg-slate-200" />
+    <Skeleton className="h-12 w-12 rounded-full  bg-slate-200" />
 
-<div className="flex flex-col gap-4 mx-4">
+<div className="flex flex-col gap-4 mx-2">
 <Skeleton className="h-4 w-[250px]   bg-slate-200" />
 
       <Skeleton className="h-4 w-[200px]  bg-slate-200" />
