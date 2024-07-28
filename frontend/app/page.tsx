@@ -197,7 +197,7 @@ export default function Home() {
     setMessages(prevMessages => [...prevMessages, { type: 'user', text: message }]);
 
     try {
-      const response = await fetch('http://localhost:8000/shop', {
+      const response = await fetch('http://127.0.0.1:8000/shop', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
