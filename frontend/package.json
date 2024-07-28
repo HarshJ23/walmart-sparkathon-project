@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.0",
+    "@radix-ui/react-dialog": "^1.1.1",
+    "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@types/node": "20.14.11",
     "@types/react": "18.3.3",

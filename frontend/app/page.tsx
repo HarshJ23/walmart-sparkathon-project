@@ -20,6 +20,9 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 
+// tool component
+import Tool from "@/components/shared/Tool";
+
 interface Product {
   image: string;
   link: string;
@@ -38,6 +41,7 @@ interface Message {
   type: 'user' | 'bot';
   text: string;
   results?: ProductResult[];
+  // category : string;
 }
 
 const placeholders = [
@@ -167,6 +171,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [category , setCategory] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = (newValue: string) => {
@@ -207,6 +212,7 @@ export default function Home() {
         console.log('Response from backend', data);
 
         setMessages(prevMessages => [...prevMessages, { type: 'bot', text: data.assistant_response, results: data.results }]);
+        setCategory(data.category);
 
         setIsLoading(false);
       } else {
@@ -289,7 +295,7 @@ export default function Home() {
 {/* footer - chat input  */}
       <footer className="flex justify-center z-40 bg-white mt-3">
         <div className="my-2 p-2 mx-2 w-full md:w-3/4 lg:w-2/3 fixed bottom-0 z-40 bg-white">
-          <div className="flex flex-row gap-2 border-[1.5px] border-blue-500 justify-center py-2 px-4 rounded-full z-40 bg-white">
+          <div className="flex flex-row gap-2 border-[1.5px] border-blue-500 justify-center py-2 px-4 rounded-2xl z-40 bg-white">
             <input
               type="text"
               value={userQuery}
@@ -297,8 +303,12 @@ export default function Home() {
               className="w-full border-none outline-none z-50 text-xs md:text-sm lg:text-base"
               placeholder={placeholders[placeholderIndex]}
             />
-            <Button type="submit" className="rounded-full font-semibold" onClick={() => { sendMessage(userQuery); setUserQuery(""); }}>
-              <LuSend className="text-lg text-yellow-400 font-semibold" />
+
+                {category == "" ? null :  <Tool toolcat = {category}/> }
+            {/* <Tool/> */}
+
+            <Button type="submit" className="rounded-xl font-semibold transition ease-in-out" onClick={() => { sendMessage(userQuery); setUserQuery(""); }}>
+              <LuSend className="text-lg text-white font-semibold" />
             </Button>
           </div>
         <p className='text-[11px] items-center text-center mt-1'>Disclaimer :The responses are AI-Generated. It may contain mistakes.</p>

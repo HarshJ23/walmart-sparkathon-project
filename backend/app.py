@@ -49,7 +49,8 @@ Format your response as JSON:
         },
         ...
     ],
-    "response": "Your friendly response to the user"
+    "response": "Your friendly response to the user",
+    "category" : "Category of shopping based on query. only select one from these : {Grocery , Fashion&Clothing , Tech}"
 }
 """
 
@@ -139,7 +140,8 @@ async def shop():
         
         return jsonify({
             "assistant_response": interpreted_data.get('response', ''),
-            "results": results
+            "results": results,
+            "category" : interpreted_data.get('category' , '')
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
