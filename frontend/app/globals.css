@@ -123,3 +123,25 @@
       @apply bg-background text-foreground;
     }
   }
+
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px; /* This will style the horizontal scrollbar height */
+
+  }
+
+  /* Track */
+::-webkit-scrollbar-track {
+  border-radius: 10px;
+}
+
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: rgb(222, 222, 222);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track:horizontal {
+  border-radius: 10px;
+}

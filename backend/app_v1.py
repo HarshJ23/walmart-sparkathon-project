@@ -1,20 +1,46 @@
 import os
 import json
 import asyncio
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from openai import OpenAI
 from aiohttp import ClientSession
 from typing import List, Optional
 from flask_cors import CORS
 from dotenv import load_dotenv
+import requests
+import firebase_admin
+from firebase_admin import credentials, storage
+# from google.cloud import storage
+from io import BytesIO
+from werkzeug.utils import secure_filename
+import uuid
+from urllib.parse import urlparse, urlunparse
+import re
+import io
+import logging
+import base64
+
+
+
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+logging.basicConfig(level=logging.DEBUG)
+
+
+# directory of the current file
+current_directory = os.path.dirname(os.path.abspath(__file__))
+
+#  full path to the service account key
+service_account_path = os.path.join(current_directory, "serviceAccountKey.json")
+
+
 
 openai_key = os.getenv('OPENAI_API_KEY')
 serp_key = os.getenv('SERPAPI_API_KEY')
+rapid_key = os.getenv('RAPID_API_KEY')
 
 # Configure OpenAI client - adjust model and parameters as needed
 client = OpenAI(api_key=openai_key)
@@ -38,7 +64,7 @@ If the query is about a recipe, provide ingredients and instructions.
 For general questions, offer clear and concise information or advice.
 Always maintain a helpful, friendly, and professional tone.
 
-Format your response as JSON:
+strictly Format your response as given JSON:
 {
     "products": [
         {
@@ -56,6 +82,17 @@ Format your response as JSON:
 
 chat_history = [{"role": "system", "content": SYSTEM_PROMPT}]
 latest_query_context = None
+
+cred = credentials.Certificate(service_account_path)
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'walmart-assistant-d0901.appspot.com'
+})
+# storage_client = storage.Client()
+
+
+LOOK_URI = ''  # Define your default look URI
+AVATAR_URI = ''  # Define your default avatar URI
+# rapid_key = rapid_key  # Define your RapidAPI key
 
 
 async def interpret_query(query: str):
@@ -155,6 +192,8 @@ async def search_youtube_recipes(keyword: str, session: ClientSession):
 
 
 
+
+
 @app.route("/shop", methods=['POST'])
 async def shop():
     global latest_query_context
@@ -216,7 +255,6 @@ async def shop():
         return jsonify({"error": str(e)}), 500
 
 
-
 @app.route("/recipe_search" , methods=['GET'])
 async def recipe_search():
     global latest_query_context
@@ -236,6 +274,61 @@ async def recipe_search():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/virtual-try-on', methods=['POST'])
+def virtual_try_on():
+    data = request.json
+    clothing_image_url = data.get('clothing_image_url')
+    avatar_image_url = data.get('avatar_image_url')
+
+    if not clothing_image_url or not avatar_image_url:
+        return {"error": "Missing clothing_image_url or avatar_image_url"}, 400
+
+    params = {
+        'clothing_image_url': clothing_image_url,
+        'avatar_image_url': avatar_image_url
+    }
+
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-RapidAPI-Key': "12a458bc08msh522f3da4fff98dcp17f205jsn59bc8118beeb",
+        'X-RapidAPI-Host': 'texel-virtual-try-on.p.rapidapi.com'
+    }
+
+    try:
+        logging.info(f"Sending request to RapidAPI with params: {params}")
+        response = requests.post(
+            'https://texel-virtual-try-on.p.rapidapi.com/try-on-url',
+            headers=headers,
+            data=params
+        )
+        response.raise_for_status()
+
+         # Encode the image data to base64
+        image_base64 = base64.b64encode(response.content).decode('utf-8')
+        
+        return jsonify({
+            "image": image_base64,
+            "content_type": response.headers.get('Content-Type', 'image/jpeg')
+        })
+    except requests.exceptions.RequestException as error:
+        return jsonify({"error": str(error)}), 500
+        
+    #     return send_file(
+    #         io.BytesIO(response.content),
+    #         mimetype='image/jpeg',
+    #         as_attachment=True,
+    #         download_name='result.jpg'
+    #     )
+    # except requests.exceptions.RequestException as error:
+    #     logging.error(f"Error from RapidAPI: {error}")
+    #     if hasattr(error, 'response') and error.response is not None:
+    #         logging.error(f"Response content: {error.response.content}")
+    #     return {"error": str(error)}, 500
+    
+   
+   
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

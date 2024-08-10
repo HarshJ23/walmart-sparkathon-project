@@ -6,3 +6,6 @@ python-dotenv
 aiohttp
 flask-cors
 flask[async]
+requests
+firebase-admin
+google-cloud-storage
