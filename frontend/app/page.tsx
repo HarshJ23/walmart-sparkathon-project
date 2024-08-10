@@ -189,7 +189,7 @@ export default function Home() {
                                 <p className='text-[15px] font-semibold '>{product.title.length > 19 ? product.title.substring(0, 19) + '...' : product.title}</p>
                                 <div className='flex flex-row gap-6'>
                                   <p className='text-sm font-medium text-blue-800 bg-blue-100 px-[4px] py-[0.5px] rounded-sm inline-block'>${product.price.toFixed(2)}</p>
-                                  {product.rating !== "0.0" ? <StarRating rating={product.rating} /> : null}
+                                  {product.rating  ? <StarRating rating={product.rating} /> : null}
                                 </div>
                               </CardFooter>
                             </Card>
