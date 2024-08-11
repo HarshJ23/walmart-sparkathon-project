@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 import requests
 import firebase_admin
 from firebase_admin import credentials, storage
-# from google.cloud import storage
 from io import BytesIO
 from werkzeug.utils import secure_filename
 import uuid
@@ -19,6 +18,8 @@ import re
 import io
 import logging
 import base64
+from typing import List, Dict, Any
+import aiohttp
 
 
 
@@ -52,35 +53,37 @@ class Product:
         self.max_price = max_price
         self.attributes = attributes
 
-SYSTEM_PROMPT = """
-You are a helpful AI assistant for a large retail store. Your primary task is to assist users with shopping-related queries, but you can also help with other tasks such as providing recipes, answering general questions, and offering advice on a wide range of topics. For each query, provide:
-For all types of queries:
-1. An initial list of 4 products to search for
-2. Any specific attributes or constraints for each product (e.g., price range, flavor, size)
-3. A friendly response to the user explaining your suggestions
-Interpret the user's request and provide an appropriate response.
-If the query is shopping-related, suggest 4 relevant products with their attributes.
-If the query is about a recipe, provide ingredients and instructions.
-For general questions, offer clear and concise information or advice.
-Always maintain a helpful, friendly, and professional tone.
 
-strictly Format your response as given JSON:
-{
+UNIFIED_PROMPT = """
+You are a helpful AI assistant for a Walmart store. Your main role is to assist users with shopping-related queries. Follow this process:
+
+1. Understand the user's query.
+2. If necessary, ask clarifying questions to better understand their needs.
+3. Once you have a clear understanding, suggest relevant products.
+
+Maintain a helpful, friendly, and professional tone throughout the conversation.
+
+Format your response as JSON:
+{{
+    "response": "Your friendly response to the user, including any necessary clarifying questions",
     "products": [
-        {
+        {{
             "name": "product name",
-            "min_price": optional minimum price,
-            "max_price": optional maximum price,
+            "min_price": minimum price if specified,
+            "max_price": maximum price if specified,
             "attributes": ["attribute1", "attribute2", ...]
-        },
+        }},
         ...
     ],
-    "response": "Your friendly response to the user",
-    "category" : "Category of shopping based on query. only select one from these : {Grocery , Fashion&Clothing , Tech}"
-}
+    "category": "Category of shopping based on query. Select one: Grocery, Fashion&Clothing, Tech",
+    "ready_for_search": boolean (true if ready to search for products, false if more clarification is needed)
+}}
+
+If you need more information or clarification, set "ready_for_search" to false and leave the "products" list empty.
+If you have enough information to suggest products, set "ready_for_search" to true and include up to 4 product suggestions in the "products" list.
 """
 
-chat_history = [{"role": "system", "content": SYSTEM_PROMPT}]
+conversation_history = [{"role": "system", "content": UNIFIED_PROMPT}]
 latest_query_context = None
 
 cred = credentials.Certificate(service_account_path)
@@ -94,46 +97,68 @@ LOOK_URI = ''  # Define your default look URI
 AVATAR_URI = ''  # Define your default avatar URI
 # rapid_key = rapid_key  # Define your RapidAPI key
 
-
-async def interpret_query(query: str):
-    chat_history.append({"role": "user", "content": query})
+async def process_query(query: str) -> dict[str, any]:
+    conversation_history.append({"role": "user", "content": query})
     try:
         completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=chat_history,
+            model="gpt-4",
+            messages=conversation_history,
             temperature=0.7,
         )
 
         response = completion.choices[0].message.content
-        chat_history.append({"role": "assistant", "content": response})
-        return response
+        conversation_history.append({"role": "assistant", "content": response})
+        logging.debug(f"OpenAI response: {response}")
+        return json.loads(response)
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to parse OpenAI response: {response}")
+        logging.error(f"JSON decode error: {str(e)}")
+        raise
     except Exception as e:
-        print(f"Error in OpenAI API call: {str(e)}")
+        logging.error(f"Error in OpenAI API call: {str(e)}")
         raise
 
-async def search_walmart(product: Product, session: ClientSession):
-    url = "https://serpapi.com/search.json"
-    query = product.name
-    if product.attributes:
-        query += " " + " ".join(product.attributes)
-    
-    params = {
-        "engine": "walmart",
-        "query": query,
-        "api_key": serp_key,
-    }
-    
-    if product.min_price is not None:
-        params["min_price"] = product.min_price
-    if product.max_price is not None:
-        params["max_price"] = product.max_price
-    
-    async with session.get(url, params=params) as response:
-        if response.status == 200:
-            data = await response.json()
-            if 'organic_results' in data and len(data['organic_results']) > 0:
-                return data['organic_results'][:3]  # Return top 3 results
-    return []
+async def search_walmart(products: List[dict[str, any]]) -> List[dict[str, any]]:
+    async def search_single_product(product: Dict[str, Any]) -> Dict[str, Any]:
+        url = "https://serpapi.com/search.json"
+        query = f"{product['name']} {' '.join(product['attributes'])}"
+        
+        params = {
+            "engine": "walmart",
+            "query": query,
+            "api_key": serp_key,
+        }
+        
+        if product.get('min_price'):
+            params["min_price"] = product['min_price']
+        if product.get('max_price'):
+            params["max_price"] = product['max_price']
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if 'organic_results' in data:
+                        results = data['organic_results'][:3]  # Limit to top 3 results
+                        return {
+                            "product": product['name'],
+                            "results": [
+                                {
+                                    "pid": item.get('product_id'),
+                                    "rating": item.get('rating'),
+                                    "title": item.get('title'),
+                                    "price": item.get('primary_offer', {}).get('offer_price'),
+                                    "image": item.get('thumbnail'),
+                                    "link": item.get('product_page_url')
+                                } for item in results
+                            ]
+                        }
+                return {"product": product['name'], "results": []}
+
+    tasks = [search_single_product(product) for product in products]
+    return await asyncio.gather(*tasks)
+
+
 
 
 async def generate_recipe_keyword(context: dict[str, str]):
@@ -192,67 +217,40 @@ async def search_youtube_recipes(keyword: str, session: ClientSession):
 
 
 
-
+# API routes
 
 @app.route("/shop", methods=['POST'])
 async def shop():
-    global latest_query_context
-
     try:
         query = request.json.get('text')
         if not query:
             return jsonify({"error": "No query provided"}), 400
 
-        interpretation = await interpret_query(query)
-        try:
-            interpreted_data = json.loads(interpretation)
-        except json.JSONDecodeError:
-            return jsonify({"error": "Failed to parse OpenAI response"}), 500
-        
-        # Debugging: Log the interpreted data to check its structure
-        print("Interpreted Data:", interpreted_data)
-        
-        if 'products' not in interpreted_data:
-            return jsonify({"error": "'products' key is missing in the response"}), 500
-        
-        results = []
-        async with ClientSession() as session:
-            tasks = []
-            for product in interpreted_data['products']:
-                product_obj = Product(**product)
-                tasks.append(search_walmart(product_obj, session))
-            
-            search_results = await asyncio.gather(*tasks)
-            
-            for product, result in zip(interpreted_data['products'], search_results):
-                results.append({
-                    "product": product['name'],
-                    "results": [
-                        {   "pid" : item.get('product_id'),
-                            "rating" : item.get('rating'),
-                            "title": item.get('title'),
-                            "price": item.get('primary_offer', {}).get('offer_price'),
-                            "image": item.get('thumbnail'),
-                            "link": item.get('product_page_url')
-                        } for item in result
-                    ]
-                })
-        
-        latest_query_context = {
-            'query': query,
-            'response': interpreted_data.get('response', ''),
-            'category': interpreted_data.get('category', '')
-        }
+        logging.info(f"Received query: {query}")
 
-        print(latest_query_context)
+        ai_response = await process_query(query)
         
+        if not ai_response['ready_for_search']:
+            return jsonify({
+                "assistant_response": ai_response['response'],
+                "ready_for_search": False
+            })
+
+        results = await search_walmart(ai_response['products'])
+
+        logging.info(f"Returning response with {len(results)} product results")
         return jsonify({
-            "assistant_response": interpreted_data.get('response', ''),
+            "assistant_response": ai_response['response'],
             "results": results,
-            "category" : interpreted_data.get('category' , '')
+            "category": ai_response['category'],
+            "ready_for_search": True
         })
+    except json.JSONDecodeError as e:
+        logging.error(f"JSON decode error: {str(e)}")
+        return jsonify({"error": "Failed to parse API response", "details": str(e)}), 500
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Error in shop route: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 
 @app.route("/recipe_search" , methods=['GET'])
