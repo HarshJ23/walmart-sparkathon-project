@@ -41,13 +41,13 @@ interface Message {
 }
 
 const placeholders = [
-  "Ask - Ingredients for Pancakes?",
+  "Ask - Want to buy some t-shirts",
   "Ask - Recipe and items to cook roasted duck?",
   "Ask - Plan snacks for a football watch party at my house",
   "Ask - Comfortable shorts for football.",
   "Ask - I'm an avid football fan. what type of tv suits best to me?",
-  "Ask - Who are the Top 3 best selling artists?",
-  "Ask - Which is the most purchased Media Type?"
+  "Ask - What type of jackets might be good for me?",
+  "Ask - Suggest some good socks for soccer."
 ];
 
 const data = [
@@ -164,12 +164,15 @@ export default function Home() {
 
   return (
     <>
+    <div className='p-4 mx-4 mt-2 fixed top-0 '>
+      <p className='font-extrabold italic text-xl hover:cursor-pointer drop-shadow-xl text-primary'><span className='text-yellow-400'>Mr.</span>Sam</p>
+    </div>
       <main className="flex min-h-screen flex-col items-center px-14 py-24">
         <section ref={chatContainerRef} className="w-full md:w-3/4 lg:w-2/3 h-full flex flex-col gap-3 overflow-y-auto">
           {messages.map((message, index) => (
             <div key={index} className="flex flex-row gap-3 my-2 z-40">
               <Avatar className='z-20'>
-                <AvatarImage src={message.type === 'user' ? "./OIP.jpeg" : "./user.png"} />
+                <AvatarImage src={message.type === 'user' ? "./useres.png" : "./user2.png"} />
                 <AvatarFallback>{message.type === 'user' ? "CN" : "BOT"}</AvatarFallback>
               </Avatar>
               <div className='text-xs md:text-base'>

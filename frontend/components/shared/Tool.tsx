@@ -25,7 +25,7 @@ const Tool: React.FC<ToolCategory> = ({ toolcat, products }) => {
       </SheetTrigger>
       <SheetContent className="w-[1000px]">
         <SheetHeader>
-          <SheetTitle><span className="text-primary font-bold text-2xl">Mr.Sam</span> Tools</SheetTitle>
+          <SheetTitle><p className='font-extrabold  text-xl hover:cursor-pointer drop-shadow-xl '><span className='text-yellow-400 italic'>Mr.</span><span className="text-primary italic">Sam</span> <span className="font-bold text-lg">Tools</span></p></SheetTitle>
           <SheetDescription>
             {toolcat}
           </SheetDescription>
