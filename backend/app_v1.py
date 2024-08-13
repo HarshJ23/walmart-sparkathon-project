@@ -69,9 +69,9 @@ Format your response as JSON:
     "products": [
         {{
             "name": "product name",
-            "min_price": minimum price if specified,
-            "max_price": maximum price if specified,
-            "attributes": ["attribute1", "attribute2", ...]
+            "min_price": minimum price if specified or null,
+            "max_price": maximum price if specified or null,
+            "attributes": ["attribute1", "attribute2", ...] or null if no specific attributes
         }},
         ...
     ],
@@ -83,7 +83,8 @@ If you need more information or clarification, set "ready_for_search" to false a
 If you have enough information to suggest products, set "ready_for_search" to true and include up to 4 product suggestions in the "products" list.
 """
 
-conversation_history = [{"role": "system", "content": UNIFIED_PROMPT}]
+
+conversation_history: List[Dict[str, str]] = [{"role": "system", "content": UNIFIED_PROMPT}]
 latest_query_context = None
 
 cred = credentials.Certificate(service_account_path)
@@ -97,7 +98,7 @@ LOOK_URI = ''  # Define your default look URI
 AVATAR_URI = ''  # Define your default avatar URI
 # rapid_key = rapid_key  # Define your RapidAPI key
 
-async def process_query(query: str) -> dict[str, any]:
+async def process_query(query: str) -> Dict[str, Any]:
     conversation_history.append({"role": "user", "content": query})
     try:
         completion = client.chat.completions.create(
@@ -118,10 +119,12 @@ async def process_query(query: str) -> dict[str, any]:
         logging.error(f"Error in OpenAI API call: {str(e)}")
         raise
 
-async def search_walmart(products: List[dict[str, any]]) -> List[dict[str, any]]:
+async def search_walmart(products: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     async def search_single_product(product: Dict[str, Any]) -> Dict[str, Any]:
         url = "https://serpapi.com/search.json"
-        query = f"{product['name']} {' '.join(product['attributes'])}"
+        query = product['name']
+        if product.get('attributes'):
+            query += " " + " ".join(product['attributes'])
         
         params = {
             "engine": "walmart",
@@ -134,26 +137,30 @@ async def search_walmart(products: List[dict[str, any]]) -> List[dict[str, any]]
         if product.get('max_price'):
             params["max_price"] = product['max_price']
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if 'organic_results' in data:
-                        results = data['organic_results'][:3]  # Limit to top 3 results
-                        return {
-                            "product": product['name'],
-                            "results": [
-                                {
-                                    "pid": item.get('product_id'),
-                                    "rating": item.get('rating'),
-                                    "title": item.get('title'),
-                                    "price": item.get('primary_offer', {}).get('offer_price'),
-                                    "image": item.get('thumbnail'),
-                                    "link": item.get('product_page_url')
-                                } for item in results
-                            ]
-                        }
-                return {"product": product['name'], "results": []}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if 'organic_results' in data:
+                            results = data['organic_results'][:3]  # Limit to top 3 results
+                            return {
+                                "product": product['name'],
+                                "results": [
+                                    {
+                                        "pid": item.get('product_id'),
+                                        "rating": item.get('rating'),
+                                        "title": item.get('title'),
+                                        "price": item.get('primary_offer', {}).get('offer_price'),
+                                        "image": item.get('thumbnail'),
+                                        "link": item.get('product_page_url')
+                                    } for item in results
+                                ]
+                            }
+        except Exception as e:
+            logging.error(f"Error searching for product {product['name']}: {str(e)}")
+        
+        return {"product": product['name'], "results": []}
 
     tasks = [search_single_product(product) for product in products]
     return await asyncio.gather(*tasks)
@@ -251,7 +258,6 @@ async def shop():
     except Exception as e:
         logging.error(f"Error in shop route: {str(e)}")
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
-
 
 @app.route("/recipe_search" , methods=['GET'])
 async def recipe_search():

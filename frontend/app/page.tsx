@@ -7,6 +7,7 @@ import StarRating from '@/components/shared/StarRating';
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Loader from '@/components/shared/Loader';
+import HomeStarter from '@/components/shared/HomeStarter';
 
 // card component imports
 import {
@@ -150,10 +151,10 @@ export default function Home() {
         console.log('Response from backend', data);
 
         setMessages(prevMessages => [...prevMessages, { type: 'bot', text: data.assistant_response, results: data.results }]);
+        setIsLoading(false);
         setProducts(data.results.flatMap(productResult => productResult.results));
         setCategory(data.category);
 
-        setIsLoading(false);
       } else {
         console.error('Error in response:', response.statusText);
       }
@@ -169,6 +170,9 @@ export default function Home() {
     </div>
       <main className="flex min-h-screen flex-col items-center px-14 py-24">
         <section ref={chatContainerRef} className="w-full md:w-3/4 lg:w-2/3 h-full flex flex-col gap-3 overflow-y-auto">
+        {messages.length == 0 && 
+        <HomeStarter/>
+        }
           {messages.map((message, index) => (
             <div key={index} className="flex flex-row gap-3 my-2 z-40">
               <Avatar className='z-20'>
@@ -205,6 +209,7 @@ export default function Home() {
               </div>
             </div>
           ))}
+
           {isLoading && (
             <Loader />
           )}
@@ -221,7 +226,7 @@ export default function Home() {
               className="w-full border-none outline-none z-50 text-xs md:text-sm lg:text-base"
               placeholder={placeholders[placeholderIndex]}
             />
-            {category  && <Tool toolcat={category} products={products} />}
+            {category == "Fashion&Clothing"  && <Tool toolcat={category} products={products} />}
             <Button type="submit" className="rounded-xl font-semibold transition ease-in-out" onClick={() => { sendMessage(userQuery); setUserQuery(""); }}>
               <LuSend className="text-lg text-white font-semibold" />
             </Button>
