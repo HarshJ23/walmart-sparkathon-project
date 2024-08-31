@@ -296,7 +296,7 @@ def virtual_try_on():
 
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'X-RapidAPI-Key': "12a458bc08msh522f3da4fff98dcp17f205jsn59bc8118beeb",
+        'X-RapidAPI-Key': "1b1854fc8fmshe9b946dc0717eddp10a300jsn603547626f44",
         'X-RapidAPI-Host': 'texel-virtual-try-on.p.rapidapi.com'
     }
 

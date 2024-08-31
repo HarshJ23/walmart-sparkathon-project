@@ -178,7 +178,7 @@ setIsLoading(true);
           'Content-type' : 'application/json',
         },
         body : JSON.stringify({
-          avatar_image_url: "https://i5.walmartimages.com/seo/Athletic-Works-Men-s-Fleece-Full-Zip-Hoodie-Jacket_f75cb628-2463-4d5e-b906-e11ad8196b55.c760c7c06748eeae398ffdd2b8b3d8e8.jpeg",
+          avatar_image_url: "https://iili.io/dEeBgkX.md.jpg",
           clothing_image_url: selectedProductUrl,
         })
       })
